@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mastertome/homepage.dart';
 import 'package:mastertome/landscreen.dart';
 
 void main() {
@@ -16,7 +17,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const LandScreen()
+      home: const Homepage()
     );
   }
 }
