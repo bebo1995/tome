@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class Tome extends StatefulWidget {
-  const Tome({super.key});
+class TomePage extends StatefulWidget {
+  const TomePage({super.key});
 
   @override
-  State<StatefulWidget> createState() => _TomeState();
+  State<StatefulWidget> createState() => _TomePageState();
 }
 
-class _TomeState extends State<Tome> {
+class _TomePageState extends State<TomePage> {
   Widget landImage() {
     return Container();
   }
