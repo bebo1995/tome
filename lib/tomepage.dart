@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:mastertome/logic/database.dart';
+
+class TomePageArgs{
+  final Database db;
+  const TomePageArgs({required this.db});
+}
 
 class TomePage extends StatefulWidget {
-  const TomePage({super.key});
+  final Database db;
+  const TomePage({super.key, required this.db});
 
   @override
   State<StatefulWidget> createState() => _TomePageState();

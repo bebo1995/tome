@@ -2,25 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:mastertome/logic/database.dart';
 import 'package:mastertome/logic/tome.dart';
 import 'package:mastertome/main.dart';
+import 'package:mastertome/tomepage.dart';
 
 class HomePageArgs{
   final String title;
-  const HomePageArgs({required this.title});
+  final Database db;
+  const HomePageArgs({required this.title, required this.db});
 }
 
 class Homepage extends StatelessWidget{
   final String title;
-  const Homepage({super.key, required this.title});
+  final Database db;
+  const Homepage({super.key, required this.title, required this.db});
 
   void createTome(){
     String tomeTitle = 'newtome';
     Tome newTome = Tome(key: tomeTitle, title: tomeTitle);
-    Database db = Database();
     db.createJson(newTome, DbCollections.tomes);
   }
 
   void loadTome(BuildContext context){
-    Navigator.pushNamed(context, Routes.tomepage.name);
+    Navigator.pushNamed(context, Routes.tomepage.name, arguments: TomePageArgs(db: db));
   }
 
   @override
