@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mastertome/homepage.dart';
-import 'package:mastertome/landscreen.dart';
 
 void main() {
   runApp(const MyApp());
