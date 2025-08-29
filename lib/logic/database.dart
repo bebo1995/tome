@@ -18,19 +18,19 @@ class Database{
   Database._internal(this._storage, this._log);
 
   Future<String?> createJson(Jsonable jsonable, DbCollections path) async {
-    String docId = path.name + jsonable.key;
+    String docId = "${path.name}\\${jsonable.key}";
     String? sameIdDoc = await _storage.read(key: docId);
     if(sameIdDoc != null){
       _log.warning('Warning: same id doc already existing');
       return null;
     }
     String jsonStr = jsonable.toJson().toString();
-    _storage.write(key: jsonable.key, value: jsonStr);
+    _storage.write(key: docId, value: jsonStr);
     return jsonStr;
   }
 
   Future<String?> readJson(String path, String key){
-    String docId = path + key;
+    String docId = "$path\\$key";
     return _storage.read(key: docId);
   }
 }

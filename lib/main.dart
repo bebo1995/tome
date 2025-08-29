@@ -27,7 +27,6 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      initialRoute: Routes.homepage.name,
       routes: {
         Routes.homepage.name: (context) => Homepage(title: (getArgs(context) as HomePageArgs).title,),
         Routes.tomepage.name: (context) => const TomePage(),
