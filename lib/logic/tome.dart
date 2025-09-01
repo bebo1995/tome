@@ -4,7 +4,7 @@ class Tome extends Jsonable{
   final String title;
   final String? image;
 
-  const Tome({required super.key, required this.title, this.image});
+  const Tome({required this.title, this.image}) : super(key: title);
 
   @override
   Map<String, String> toJson(){

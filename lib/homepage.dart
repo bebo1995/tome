@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tome/createtome.dart';
 import 'package:tome/logic/database.dart';
 import 'package:tome/logic/tome.dart';
 import 'package:tome/main.dart';
@@ -14,15 +15,17 @@ class Homepage extends StatelessWidget{
   final String title;
   final Database db;
   const Homepage({super.key, required this.title, required this.db});
+  static Homepage fromArgs(HomePageArgs args){
+    return Homepage(db: args.db, title: args.title,);
+  }
 
-  void createTome(){
-    String tomeTitle = 'newtome';
-    Tome newTome = Tome(key: tomeTitle, title: tomeTitle);
-    db.createJson(newTome, DbCollections.tomes);
+  void createTome(BuildContext context){
+    Navigator.pushNamed(context, Routes.createtome.name, arguments: CreateTomeArgs(db: db));
   }
 
   void loadTome(BuildContext context){
-    Navigator.pushNamed(context, Routes.tomepage.name, arguments: TomePageArgs(db: db));
+    Tome test = Tome(title: 'Test');
+    Navigator.pushNamed(context, Routes.tomepage.name, arguments: TomePageArgs(db: db, tome: test));
   }
 
   @override
@@ -35,7 +38,7 @@ class Homepage extends StatelessWidget{
       body: Center(
         child: Column(
           children: [
-            TextButton(onPressed: createTome, child: Text("Nuovo tomo")),
+            TextButton(onPressed: (){createTome(context);}, child: Text("Nuovo tomo")),
             TextButton(onPressed: (){loadTome(context);}, child: Text("Carica tomo"))
           ],
         ),

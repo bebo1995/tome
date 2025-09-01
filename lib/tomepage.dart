@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:tome/logic/database.dart';
+import 'package:tome/logic/tome.dart';
 
 class TomePageArgs{
   final Database db;
-  const TomePageArgs({required this.db});
+  final Tome tome;
+  const TomePageArgs({required this.db, required this.tome});
 }
 
 class TomePage extends StatefulWidget {
   final Database db;
-  const TomePage({super.key, required this.db});
+  final Tome tome;
+  const TomePage({super.key, required this.db, required this.tome});
+  static TomePage fromArgs(TomePageArgs args){
+    return TomePage(db: args.db, tome: args.tome);
+  }
 
   @override
   State<StatefulWidget> createState() => _TomePageState();
@@ -47,7 +53,7 @@ class _TomePageState extends State<TomePage> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text("Universo"),
+        title: Text(widget.tome.title),
         actions: [IconButton(onPressed: () => {}, icon: Icon(Icons.settings))],
       ),
       body: Stack(

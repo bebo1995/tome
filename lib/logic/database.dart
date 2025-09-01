@@ -34,9 +34,16 @@ class Database{
     return store.record(docId).put(_db, jsonStr);
   }
 
-  Future<String?> readJson(String path, String key){
-    String docId = "$path\\$key";
+  Future<String?> readJson(DbCollections path, String key){
+    String docId = "${path.name}\\$key";
     sb.StoreRef<String, String> store = sb.StoreRef<String, String>.main();
-    return store.record(docId).get(_db);
+    return Future.delayed(Duration(seconds: 3)).then((v){
+      return store.record(docId).get(_db);
+    });
+  }
+
+  Future<void> cleanDb(){
+    var store = sb.StoreRef.main();
+    return store.drop(_db);
   }
 }

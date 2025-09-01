@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tome/createtome.dart';
 import 'package:tome/homepage.dart';
 import 'package:tome/logic/database.dart';
 import 'package:tome/splashscreen.dart';
@@ -10,7 +11,8 @@ void main() {
 
 enum Routes{
   homepage,
-  tomepage
+  tomepage,
+  createtome
 }
 
 class MyApp extends StatelessWidget {
@@ -28,8 +30,9 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       routes: {
-        Routes.homepage.name: (context) => Homepage(title: (getArgs(context) as HomePageArgs).title, db: (getArgs(context) as HomePageArgs).db),
-        Routes.tomepage.name: (context) => TomePage(db: (getArgs(context) as TomePageArgs).db),
+        Routes.homepage.name: (context) => Homepage.fromArgs(getArgs(context) as HomePageArgs),
+        Routes.tomepage.name: (context) => TomePage.fromArgs(getArgs(context) as TomePageArgs),
+        Routes.createtome.name: (context) => CreateTome.fromArgs(getArgs(context) as CreateTomeArgs)
       },
       home: Homepage(title: appTitle, db: db,)
     );
