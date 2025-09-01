@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mastertome/homepage.dart';
-import 'package:mastertome/logic/database.dart';
-import 'package:mastertome/splashscreen.dart';
-import 'package:mastertome/tomepage.dart';
+import 'package:tome/homepage.dart';
+import 'package:tome/logic/database.dart';
+import 'package:tome/splashscreen.dart';
+import 'package:tome/tomepage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   }
 
   Widget buildApp(Database db){
-    final String appTitle = 'Mastertome';
+    final String appTitle = 'Tome';
     return MaterialApp(
       title: appTitle,
       theme: ThemeData(

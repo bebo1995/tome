@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mastertome/logic/database.dart';
-import 'package:mastertome/logic/tome.dart';
-import 'package:mastertome/main.dart';
-import 'package:mastertome/tomepage.dart';
+import 'package:tome/logic/database.dart';
+import 'package:tome/logic/tome.dart';
+import 'package:tome/main.dart';
+import 'package:tome/tomepage.dart';
 
 class HomePageArgs{
   final String title;

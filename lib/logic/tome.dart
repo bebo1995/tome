@@ -1,4 +1,4 @@
-import 'package:mastertome/logic/jsonable.dart';
+import 'package:tome/logic/jsonable.dart';
 
 class Tome extends Jsonable{
   final String title;

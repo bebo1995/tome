@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mastertome/logic/database.dart';
+import 'package:tome/logic/database.dart';
 
 class TomePageArgs{
   final Database db;
