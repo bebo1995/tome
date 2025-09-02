@@ -1,8 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:tome/logic/database.dart';
 import 'package:tome/logic/tome.dart';
 import 'package:tome/main.dart';
 import 'package:tome/settings.dart';
+
+enum MarkEventType{
+  creation,
+  movement
+}
 
 class TomePageArgs{
   final Database db;
@@ -23,8 +30,37 @@ class TomePage extends StatefulWidget {
 }
 
 class _TomePageState extends State<TomePage> {
-  Widget landImage() {
-    return Container();
+
+  Widget landImage(StreamController<Offset> marksStream) {
+    Widget landmark = Icon(Icons.location_on);
+    Widget land = Container(color: Colors.amber);
+    return StreamBuilder<Offset>(
+      stream: marksStream.stream,
+      builder: ((context, snapshot){
+        if(snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none){
+          return land;
+        }
+        return Stack(
+          children: [
+            land,
+            Positioned(
+              left: snapshot.data?.dx,
+              top: snapshot.data?.dy,
+              child: Draggable(
+                feedback: landmark,
+                childWhenDragging: Container(),
+                onDragEnd: (details){
+                  RenderBox contextBox = context.findRenderObject() as RenderBox;
+                  Offset localPoint = contextBox.globalToLocal(details.offset);
+                  marksStream.add(localPoint);
+                },
+                child: landmark,
+              )
+            )
+          ],
+        );
+      })
+    );
   }
 
   Widget button(void Function()? onPressed, Icon icon) {
@@ -35,23 +71,30 @@ class _TomePageState extends State<TomePage> {
     );
   }
 
-  Widget buttons() {
-    Size screenSize = MediaQuery.of(context).size;
-    double buttonsH = screenSize.height * 0.1;
-    return SizedBox(
-      height: buttonsH,
-      child: Row(
-        children: [
-          button(() => {}, Icon(Icons.book)),
-          button(() => {}, Icon(Icons.add_photo_alternate)),
-          button(() => {}, Icon(Icons.add_location)),
-        ],
-      ),
+  void addLocation(StreamController<Offset> markStream, GlobalKey landKey){
+    BuildContext? landContext = landKey.currentContext;
+    if(landContext == null){
+      return;
+    }
+    RenderBox box = landContext.findRenderObject() as RenderBox;
+    Size landSize = box.size;
+    markStream.add(Offset(landSize.width/2, landSize.height/2));
+  }
+
+  Widget buttons(StreamController<Offset> markStream, GlobalKey landKey) {
+    return Row(
+      children: [
+        button(() => {}, Icon(Icons.book)),
+        button(() => {}, Icon(Icons.add_photo_alternate)),
+        button(() => addLocation(markStream, landKey), Icon(Icons.add_location)),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    StreamController<Offset> markStream = StreamController<Offset>();
+    GlobalKey landKey = GlobalKey();
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -60,9 +103,10 @@ class _TomePageState extends State<TomePage> {
           onPressed: () => Navigator.of(context).pushNamed(Routes.settings.name, arguments: SettingsArgs(db: widget.db)), 
           icon: Icon(Icons.settings))],
       ),
-      body: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [landImage(), buttons()],
+      body: Column(
+        children: [
+          Expanded(flex: 90, key: landKey, child: landImage(markStream)), 
+          Expanded(flex: 10, child: buttons(markStream, landKey))],
       ),
     );
   }
