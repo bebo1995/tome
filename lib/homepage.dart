@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tome/createtome.dart';
+import 'package:tome/loadtome.dart';
 import 'package:tome/logic/database.dart';
-import 'package:tome/logic/tome.dart';
 import 'package:tome/main.dart';
-import 'package:tome/tomepage.dart';
 
 class HomePageArgs{
   final String title;
@@ -24,8 +23,7 @@ class Homepage extends StatelessWidget{
   }
 
   void loadTome(BuildContext context){
-    Tome test = Tome(title: 'Test');
-    Navigator.pushNamed(context, Routes.tomepage.name, arguments: TomePageArgs(db: db, tome: test));
+    Navigator.pushNamed(context, Routes.loadtome.name, arguments: LoadTomeArgs(db: db));
   }
 
   @override
@@ -39,7 +37,8 @@ class Homepage extends StatelessWidget{
         child: Column(
           children: [
             TextButton(onPressed: (){createTome(context);}, child: Text("Nuovo tomo")),
-            TextButton(onPressed: (){loadTome(context);}, child: Text("Carica tomo"))
+            TextButton(onPressed: (){loadTome(context);}, child: Text("Carica tomo")),
+            TextButton(onPressed: (){db.cleanDb();}, child: Text("Reset"))
           ],
         ),
       ),

@@ -93,7 +93,7 @@ class CreateTomeState extends State<CreateTome>{
               content: readDbProgressIndicator(context)
             );
           });
-          String? titleMatch = await widget.db.readJson(DbCollections.tomes, titleCtrl.text);
+          Map<String, String?>? titleMatch = await widget.db.readJson(DbCollections.tomes, titleCtrl.text);
           if(!ctxt.mounted){
             return;
           }
