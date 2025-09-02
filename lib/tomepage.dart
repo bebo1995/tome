@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tome/logic/database.dart';
 import 'package:tome/logic/tome.dart';
+import 'package:tome/main.dart';
+import 'package:tome/settings.dart';
 
 class TomePageArgs{
   final Database db;
@@ -54,7 +56,9 @@ class _TomePageState extends State<TomePage> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(widget.tome.title),
-        actions: [IconButton(onPressed: () => {}, icon: Icon(Icons.settings))],
+        actions: [IconButton(
+          onPressed: () => Navigator.of(context).pushNamed(Routes.settings.name, arguments: SettingsArgs(db: widget.db)), 
+          icon: Icon(Icons.settings))],
       ),
       body: Stack(
         alignment: Alignment.bottomCenter,

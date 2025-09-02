@@ -5,17 +5,15 @@ import 'package:tome/logic/database.dart';
 import 'package:tome/main.dart';
 
 class HomePageArgs{
-  final String title;
   final Database db;
-  const HomePageArgs({required this.title, required this.db});
+  const HomePageArgs({required this.db});
 }
 
 class Homepage extends StatelessWidget{
-  final String title;
   final Database db;
-  const Homepage({super.key, required this.title, required this.db});
+  const Homepage({super.key, required this.db});
   static Homepage fromArgs(HomePageArgs args){
-    return Homepage(db: args.db, title: args.title,);
+    return Homepage(db: args.db,);
   }
 
   void createTome(BuildContext context){
@@ -31,7 +29,7 @@ class Homepage extends StatelessWidget{
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text(title),
+        title: Text('Tome'),
       ),
       body: Center(
         child: Column(

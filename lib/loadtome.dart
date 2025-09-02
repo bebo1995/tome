@@ -37,7 +37,10 @@ class LoadTomeState extends State<LoadTome>{
   }
 
   void loadTome(Tome tome){
-    Navigator.of(context).pushNamed(Routes.tomepage.name, arguments: TomePageArgs(db: widget.db, tome: tome));
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      Routes.tomepage.name,
+      (route){return !Navigator.of(context).canPop();},
+      arguments: TomePageArgs(db: widget.db, tome: tome));
   }
 
   void deleteTome(Tome tome) async{

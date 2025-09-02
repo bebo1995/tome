@@ -3,6 +3,7 @@ import 'package:tome/createtome.dart';
 import 'package:tome/homepage.dart';
 import 'package:tome/loadtome.dart';
 import 'package:tome/logic/database.dart';
+import 'package:tome/settings.dart';
 import 'package:tome/splashscreen.dart';
 import 'package:tome/tomepage.dart';
 
@@ -14,7 +15,8 @@ enum Routes{
   homepage,
   tomepage,
   createtome,
-  loadtome
+  loadtome,
+  settings
 }
 
 class MyApp extends StatelessWidget {
@@ -35,9 +37,10 @@ class MyApp extends StatelessWidget {
         Routes.homepage.name: (context) => Homepage.fromArgs(getArgs(context) as HomePageArgs),
         Routes.tomepage.name: (context) => TomePage.fromArgs(getArgs(context) as TomePageArgs),
         Routes.createtome.name: (context) => CreateTome.fromArgs(getArgs(context) as CreateTomeArgs),
-        Routes.loadtome.name: (context) => LoadTome.fromArgs(getArgs(context) as LoadTomeArgs)
+        Routes.loadtome.name: (context) => LoadTome.fromArgs(getArgs(context) as LoadTomeArgs),
+        Routes.settings.name: (context) => Settings.fromArgs(getArgs(context) as SettingsArgs)
       },
-      home: Homepage(title: appTitle, db: db,)
+      home: Homepage(db: db,)
     );
   }
 

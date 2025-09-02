@@ -122,7 +122,10 @@ class CreateTomeState extends State<CreateTome>{
             }
             Tome newTome = Tome(title: titleCtrl.text);
             widget.db.createJson(newTome, DbCollections.tomes);
-            Navigator.of(ctxt).pushNamed(Routes.tomepage.name, arguments: TomePageArgs(db: widget.db, tome: newTome));
+            Navigator.of(ctxt).pushNamedAndRemoveUntil(
+              Routes.tomepage.name,
+              (route){return !Navigator.of(context).canPop();},
+              arguments: TomePageArgs(db: widget.db, tome: newTome));
           }
         }, 
         child: Text('Conferma')),)
