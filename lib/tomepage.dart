@@ -31,30 +31,53 @@ class TomePage extends StatefulWidget {
 
 class _TomePageState extends State<TomePage> {
 
+  Icon landMark(){
+    double landmarkSquare = MediaQuery.of(context).size.shortestSide/25;
+    return Icon(Icons.location_on, size: landmarkSquare,);
+  }
+
+  Offset adjustMarkXY(BuildContext context, Offset globalPoint){
+    RenderBox contextBox = context.findRenderObject() as RenderBox;
+    Offset localPoint = contextBox.globalToLocal(globalPoint);
+    double xTransl = 0;
+    double yTransl = 0;
+    if(!(localPoint.dx > 0 && contextBox.size.width - localPoint.dx > 0)){
+      xTransl = localPoint.dx < 0 ? -localPoint.dx : contextBox.size.width - (localPoint.dx + landMark().size!);
+    }
+    if(!(localPoint.dy > 0 && contextBox.size.height - localPoint.dy > 0)){
+      yTransl = localPoint.dy < 0 ? -localPoint.dy : contextBox.size.height - (localPoint.dy + landMark().size!);
+    }
+    Offset adjustedPoint = localPoint.translate(xTransl, yTransl); 
+    return adjustedPoint;
+  }
+
+  Widget land(StreamController<Offset> marksStream){
+    return GestureDetector(
+      onTapUp: (details) => marksStream.add(details.localPosition),
+      child: Container(
+        color: Colors.amber
+      ),
+    );
+  }
+
   Widget landImage(StreamController<Offset> marksStream) {
-    Widget landmark = Icon(Icons.location_on);
-    Widget land = Container(color: Colors.amber);
     return StreamBuilder<Offset>(
       stream: marksStream.stream,
       builder: ((context, snapshot){
         if(snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none){
-          return land;
+          return land(marksStream);
         }
         return Stack(
           children: [
-            land,
+            land(marksStream),
             Positioned(
               left: snapshot.data?.dx,
               top: snapshot.data?.dy,
               child: Draggable(
-                feedback: landmark,
+                feedback: landMark(),
                 childWhenDragging: Container(),
-                onDragEnd: (details){
-                  RenderBox contextBox = context.findRenderObject() as RenderBox;
-                  Offset localPoint = contextBox.globalToLocal(details.offset);
-                  marksStream.add(localPoint);
-                },
-                child: landmark,
+                onDragEnd: (details) => marksStream.add(adjustMarkXY(context, details.offset)),
+                child: landMark(),
               )
             )
           ],
