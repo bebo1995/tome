@@ -33,7 +33,7 @@ class TomePage extends StatefulWidget {
 class _TomePageState extends State<TomePage> {
 
   Icon landMark(){
-    double landmarkSquare = MediaQuery.of(context).size.shortestSide/25;
+    double landmarkSquare = MediaQuery.of(context).size.shortestSide/15;
     return Icon(Icons.location_on, size: landmarkSquare,);
   }
 
@@ -52,21 +52,30 @@ class _TomePageState extends State<TomePage> {
     return adjustedPoint;
   }
 
-  Widget land(StreamController<Offset> marksStream, List<Offset> landmarks, BuildContext context){
+  Widget land(StreamController<Offset> marksStream, BuildContext context, Offset? update){
     List<Widget> widgets = List<Widget>.empty(growable: true); 
     widgets.add(Container(
         color: Colors.amber
     ));
-    widgets.addAll(landmarks.map((elem) => Positioned(
+    widgets.addAll(widget.tome.landmarks.map((elem) => Positioned(
       left: elem.dx,
       top: elem.dy,
-      child: Draggable(
-        feedback: landMark(),
-        childWhenDragging: Container(),
-        onDragEnd: (details) => marksStream.add(adjustMarkXY(context, details.offset)),
-        child: landMark(),
-      )
+      child: landMark()
     )).toList());
+    if(update != null){
+      widgets.add(
+        Positioned(
+          left: update.dx,
+          top: update.dy,
+          child: Draggable(
+            feedback: landMark(),
+            childWhenDragging: Container(),
+            onDragEnd: (details) => marksStream.add(adjustMarkXY(context, details.offset)),
+            child: landMark(),
+          )
+        ) 
+      );
+    }
     return GestureDetector(
       onTapUp: (details) => marksStream.add(details.localPosition),
       child: Stack(
@@ -75,15 +84,11 @@ class _TomePageState extends State<TomePage> {
     );
   }
 
-  Widget landImage(StreamController<Offset> marksStream, TomepageMode mode, List<Offset> landmarks) {
+  Widget landImage(StreamController<Offset> marksStream, TomepageMode mode) {
     return StreamBuilder<Offset>(
       stream: marksStream.stream,
       builder: ((context, snapshot){
-        if(mode != TomepageMode.landmarkMove || snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none){
-          return land(marksStream, landmarks, context);
-        }
-        landmarks.last = Offset(snapshot.data!.dx, snapshot.data!.dy);
-        return land(marksStream, landmarks, context);
+        return land(marksStream, context, snapshot.data);
       })
     );
   }
@@ -96,7 +101,7 @@ class _TomePageState extends State<TomePage> {
     );
   }
 
-  Offset? addLocation(StreamController<Offset> markStream, GlobalKey landKey){
+  Offset? createLocation(StreamController<Offset> markStream, GlobalKey landKey){
     BuildContext? landContext = landKey.currentContext;
     if(landContext == null){
       return null;
@@ -104,7 +109,6 @@ class _TomePageState extends State<TomePage> {
     RenderBox box = landContext.findRenderObject() as RenderBox;
     Size landSize = box.size;
     Offset position = Offset(landSize.width/2, landSize.height/2);
-    markStream.add(position);
     return position;
   }
 
@@ -118,21 +122,21 @@ class _TomePageState extends State<TomePage> {
     );
   }
 
-  Widget landmarkOnButtons(StreamController<TomepageMode> modeStream, StreamController<Offset> markStream, GlobalKey landKey, List<Offset> landmarks){
+  Widget landmarkOnButtons(StreamController<TomepageMode> modeStream, StreamController<Offset> markStream, GlobalKey landKey){
     //TODO: enable landmark selection
     return Row(
       children: [
         button(() => modeStream.add(TomepageMode.base), Icon(Icons.arrow_back)),
         button((){
           modeStream.add(TomepageMode.landmarkMove);
-          Offset? newLocation = addLocation(markStream, landKey);
-          landmarks.add(newLocation!);
+          Offset newLocation = createLocation(markStream, landKey)!;
+          markStream.add(newLocation);
           }, Icon(Icons.add_location)),
       ],
     );
   }
 
-  Widget landmarkNewButtons(StreamController<TomepageMode> modeStream, List<Offset> landMarks){
+  Widget landmarkConfirmButtons(StreamController<TomepageMode> modeStream){
     return Row(
       children: [
         button(() => modeStream.add(TomepageMode.landmarkOn), Icon(Icons.arrow_back)),
@@ -141,10 +145,10 @@ class _TomePageState extends State<TomePage> {
     );
   }
 
-  Widget tomepageBody(GlobalKey landKey, Widget buttons, StreamController<Offset> marksStream, TomepageMode mode, List<Offset> landmarks){
+  Widget tomepageBody(GlobalKey landKey, Widget buttons, StreamController<Offset> marksStream, TomepageMode mode){
     return Column(
       children: [
-        Expanded(flex: 90, key: landKey, child: landImage(marksStream, mode, landmarks)), 
+        Expanded(flex: 90, key: landKey, child: landImage(marksStream, mode)), 
         Expanded(flex: 10, child: buttons)],
     ); 
   }
@@ -153,7 +157,6 @@ class _TomePageState extends State<TomePage> {
   Widget build(BuildContext context) {
     StreamController<Offset> markStream = StreamController<Offset>();
     StreamController<TomepageMode> modeStream = StreamController<TomepageMode>();
-    List<Offset> landmarks = List<Offset>.empty(growable: true);
     GlobalKey landKey = GlobalKey();
     return Scaffold(
       appBar: AppBar(
@@ -167,17 +170,24 @@ class _TomePageState extends State<TomePage> {
         stream: modeStream.stream,
         initialData: TomepageMode.base,
         builder: (context, modeUpdate) {
+          Widget buttons;
           if(modeUpdate.connectionState == ConnectionState.none || modeUpdate.connectionState == ConnectionState.waiting){
-            return tomepageBody(landKey, baseButtons(modeStream), markStream, modeUpdate.data!, landmarks);      
+            buttons = baseButtons(modeStream);
           }
-          switch(modeUpdate.data!){
-            case TomepageMode.base:
-              return tomepageBody(landKey, baseButtons(modeStream), markStream, modeUpdate.data!, landmarks);
-            case TomepageMode.landmarkOn:
-              return tomepageBody(landKey, landmarkOnButtons(modeStream, markStream, landKey, landmarks), markStream, modeUpdate.data!, landmarks);
-            case TomepageMode.landmarkMove:
-              return tomepageBody(landKey, landmarkNewButtons(modeStream, landmarks), markStream, modeUpdate.data!, landmarks);
+          else{
+            switch(modeUpdate.data!){
+              case TomepageMode.base:
+                buttons = baseButtons(modeStream);
+                break;
+              case TomepageMode.landmarkOn:
+                buttons = landmarkOnButtons(modeStream, markStream, landKey);
+                break;
+              case TomepageMode.landmarkMove:
+                buttons = landmarkConfirmButtons(modeStream);
+                break;
+            }
           }
+          return tomepageBody(landKey, buttons, markStream, modeUpdate.data!);
         }
       ),
     );

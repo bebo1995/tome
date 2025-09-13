@@ -1,10 +1,13 @@
+import 'package:flutter/widgets.dart';
 import 'package:tome/logic/jsonable.dart';
 
 class Tome extends Jsonable{
   final String title;
   final String? image;
+  late List<Offset> landmarks;
 
-  const Tome({required this.title, this.image}) : super(key: title);
+  Tome({required this.title, this.image, List<Offset>? landmarks}) 
+  : landmarks = landmarks ?? List<Offset>.empty(growable: true), super(key: title);
   static Tome? fromJson(Map<String, String?> json){
     if(!json.containsKey('title')){
       return null;
