@@ -3,22 +3,37 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 class TomeMap{
-  List<Offset> _layerBack;
-  List<Offset> _layerFront;
-  StreamController<Offset> _layBStream;
-  StreamController<Offset> _layFStream;
+  final List<Offset> _layerBack;
+  final List<Offset> _layerFront;
+  final StreamController<Offset> _layBStream;
+  final StreamController<Offset?> _layFStream;
   final List<Offset> initialLandmarks;
   final double landmarkSize;
-  final GlobalKey key;
 
-  TomeMap({required this.key, required this.initialLandmarks, required this.landmarkSize}) : 
+  TomeMap({required this.initialLandmarks, required this.landmarkSize}) : 
   _layerBack = initialLandmarks,
   _layerFront = List<Offset>.empty(growable: true),
-  _layFStream = StreamController<Offset>(),
+  _layFStream = StreamController<Offset?>(),
   _layBStream = StreamController<Offset>();
+
+  Offset _adjustMarkXY(BuildContext context, Offset globalPoint){
+    RenderBox contextBox = context.findRenderObject() as RenderBox;
+    Offset localPoint = contextBox.globalToLocal(globalPoint);
+    double xTransl = 0;
+    double yTransl = 0;
+    if(!(localPoint.dx > 0 && contextBox.size.width - localPoint.dx > 0)){
+      xTransl = localPoint.dx < 0 ? -localPoint.dx : contextBox.size.width - (localPoint.dx + landmarkSize);
+    }
+    if(!(localPoint.dy > 0 && contextBox.size.height - localPoint.dy > 0)){
+      yTransl = localPoint.dy < 0 ? -localPoint.dy : contextBox.size.height - (localPoint.dy + landmarkSize);
+    }
+    Offset adjustedPoint = localPoint.translate(xTransl, yTransl); 
+    return adjustedPoint;
+  }
 
   void _resetFront(){
     _layerFront.clear();
+    _layFStream.add(null);
   }
 
   void createLandmark(Offset position){
@@ -41,7 +56,7 @@ class TomeMap{
     _resetFront();
   }
 
-  Widget _landMark(Offset position, bool activateDrag){
+  Widget _landMark(Offset position, bool activateDrag, BuildContext context){
     Icon landmark = Icon(Icons.location_on, size: landmarkSize,);
     Widget returnWidget = landmark;
     if(!activateDrag){
@@ -51,59 +66,57 @@ class TomeMap{
       returnWidget = Draggable(
             feedback: landmark,
             childWhenDragging: Container(),
-            onDragEnd: (details) => moveLandmark(details.offset),
+            onDragEnd: (details) => moveLandmark(_adjustMarkXY(context, details.offset)),
             child: landmark,
           );
     }
-    returnWidget = Positioned(
+    return Positioned(
           left: position.dx,
           top: position.dy,
-          child: Draggable(
-            feedback: landmark,
-            childWhenDragging: Container(),
-            onDragEnd: (details) => moveLandmark(details.offset),
-            child: landmark,
-          )
+          child: returnWidget
         ); 
-    return returnWidget;
   }
 
-  Widget _layBack(){
+  Widget _layBack(BuildContext context){
     return StreamBuilder<Offset>(
       stream: _layBStream.stream, 
       builder: (BuildContext context, AsyncSnapshot<Offset> snap){
         if(snap.hasData){
           _layerBack.add(snap.data!);
         }
-        return Stack(children: _layerBack.map((landmark)=>_landMark(landmark, false)).toList());
+        return Stack(children: _layerBack.map((landmark)=>_landMark(landmark, false, context)).toList());
       });
   }
 
-  Widget _layFront(){
-    return StreamBuilder<Offset>(
+  Widget _layFront(BuildContext context){
+    return StreamBuilder<Offset?>(
       stream: _layFStream.stream, 
-      builder: (BuildContext context, AsyncSnapshot<Offset> snap){
+      builder: (BuildContext context, AsyncSnapshot<Offset?> snap){
+        _layerFront.clear();
         if(snap.hasData){
-          _layerFront.clear();
           _layerFront.add(snap.data!);
         }
-        return Stack(children: _layerFront.map((landmark)=>_landMark(landmark, true)).toList());
+        return Stack(children: _layerFront.map((landmark)=>_landMark(landmark, true, context)).toList());
       });
   }
 
-  Widget getWidget(){
+  Widget getWidget(BuildContext context){
+    Widget background = GestureDetector(
+      onTapUp: (details){
+        if(_layerFront.isEmpty){
+          return;
+        }
+        Offset position = details.localPosition;
+        position = position.translate(-landmarkSize/2, -landmarkSize);
+        moveLandmark(position);
+      },
+      child: Container(color: Colors.amber,)
+    );
     return Stack(
       children: [
-        GestureDetector(
-          onTapUp: (details){
-            Offset position = details.localPosition;
-            position = position.translate(-landmarkSize/2, -landmarkSize);
-            moveLandmark(position);
-          },
-          child: Container(color: Colors.amber,)
-        ),
-        _layBack(),
-        _layFront()
+        background,
+        _layBack(context),
+        _layFront(context)
       ],
     );
   }
