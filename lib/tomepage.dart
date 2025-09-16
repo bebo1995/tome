@@ -5,7 +5,6 @@ import 'package:tome/logic/database.dart';
 import 'package:tome/logic/tome.dart';
 import 'package:tome/main.dart';
 import 'package:tome/logic/tomemap.dart';
-import 'package:tome/logic/maplayer.dart';
 import 'package:tome/settings.dart';
 
 enum TomepageMode{
@@ -88,8 +87,8 @@ class _TomePageState extends State<TomePage> {
           modeStream.add(TomepageMode.landmarkOn);
         }, Icon(Icons.arrow_back)),
         button((){
-          widget.tome.landmarks.addAll(map.getActiveLandmarks());
           map.confirmLandmarks();
+          widget.tome.landmarks.addAll(map.getCurrentLandmarks());
           modeStream.add(TomepageMode.landmarkOn);
         }, 
         Icon(Icons.check)),
@@ -97,7 +96,7 @@ class _TomePageState extends State<TomePage> {
     );
   }
 
-  Widget tomepageBody(GlobalKey landKey, Widget buttons, StreamController<List<MapLayer>> landmarksStream, TomeMap map){
+  Widget tomepageBody(GlobalKey landKey, Widget buttons, TomeMap map){
     return Column(
       children: [
         Expanded(flex: 90, key: landKey, child: map.getWidget()), 
@@ -108,10 +107,9 @@ class _TomePageState extends State<TomePage> {
   @override
   Widget build(BuildContext context) {
     double landmarkSize = MediaQuery.of(context).size.shortestSide/15;
-    StreamController<List<MapLayer>> layersStream = StreamController<List<MapLayer>>();
     StreamController<TomepageMode> modeStream = StreamController<TomepageMode>();
     GlobalKey landKey = GlobalKey();
-    TomeMap map = TomeMap(key: landKey, landmarkSize: landmarkSize, tome: widget.tome);
+    TomeMap map = TomeMap(key: landKey, landmarkSize: landmarkSize, initialLandmarks: widget.tome.landmarks);
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -141,7 +139,7 @@ class _TomePageState extends State<TomePage> {
                 break;
             }
           }
-          return tomepageBody(landKey, buttons, layersStream, map);
+          return tomepageBody(landKey, buttons, map);
         }
       ),
     );

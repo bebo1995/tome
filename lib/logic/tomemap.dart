@@ -1,25 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:tome/logic/maplayer.dart';
-import 'package:tome/logic/tome.dart';
 
 class TomeMap{
-  final MapLayer _layerBack;
-  MapLayer _layerFront;
-  final Tome tome;
+  List<Offset> _layerBack;
+  List<Offset> _layerFront;
+  StreamController<Offset> _layBStream;
+  StreamController<Offset> _layFStream;
+  final List<Offset> initialLandmarks;
   final double landmarkSize;
   final GlobalKey key;
 
-  TomeMap({required this.key, required this.tome, required this.landmarkSize}) : 
-  _layerBack = MapLayer(activateDrag: false, landmarksSize: landmarkSize, landmarks: tome.landmarks),
-  _layerFront = MapLayer(activateDrag: true, landmarksSize: landmarkSize, landmarks: List<Offset>.empty(growable: true));
-
-  void createLandmark(Offset landmark){
-    _layerFront.landmarks.add(landmark);
-    _layerFront.moveLandmark(landmark);
-  }
+  TomeMap({required this.key, required this.initialLandmarks, required this.landmarkSize}) : 
+  _layerBack = initialLandmarks,
+  _layerFront = List<Offset>.empty(growable: true),
+  _layFStream = StreamController<Offset>(),
+  _layBStream = StreamController<Offset>();
 
   void _resetFront(){
-    _layerFront = MapLayer(activateDrag: true, landmarksSize: landmarkSize, landmarks: List<Offset>.empty(growable: true));
+    _layerFront.clear();
+  }
+
+  void createLandmark(Offset position){
+    _layerFront.add(position);
+    _layFStream.add(position);
+  }
+
+  void moveLandmark(Offset position){
+    _layFStream.add(position);
   }
 
   void cancelLandmarks(){
@@ -27,10 +35,60 @@ class TomeMap{
   }
 
   void confirmLandmarks(){
-    for (var landmark in _layerFront.landmarks) {
-      _layerBack.moveLandmark(landmark);
+    for (Offset landmark in _layerFront) {
+      _layBStream.add(landmark);
     }
     _resetFront();
+  }
+
+  Widget _landMark(Offset position, bool activateDrag){
+    Icon landmark = Icon(Icons.location_on, size: landmarkSize,);
+    Widget returnWidget = landmark;
+    if(!activateDrag){
+      returnWidget = landmark;
+    }
+    else{
+      returnWidget = Draggable(
+            feedback: landmark,
+            childWhenDragging: Container(),
+            onDragEnd: (details) => moveLandmark(details.offset),
+            child: landmark,
+          );
+    }
+    returnWidget = Positioned(
+          left: position.dx,
+          top: position.dy,
+          child: Draggable(
+            feedback: landmark,
+            childWhenDragging: Container(),
+            onDragEnd: (details) => moveLandmark(details.offset),
+            child: landmark,
+          )
+        ); 
+    return returnWidget;
+  }
+
+  Widget _layBack(){
+    return StreamBuilder<Offset>(
+      stream: _layBStream.stream, 
+      builder: (BuildContext context, AsyncSnapshot<Offset> snap){
+        if(snap.hasData){
+          _layerBack.add(snap.data!);
+        }
+        return Stack(children: _layerBack.map((landmark)=>_landMark(landmark, false)).toList());
+      });
+  }
+
+  Widget _layFront(){
+    return StreamBuilder<Offset>(
+      stream: _layFStream.stream, 
+      builder: (BuildContext context, AsyncSnapshot<Offset> snap){
+        if(snap.hasData){
+          _layerFront.clear();
+          _layerFront.add(snap.data!);
+        }
+        return Stack(children: _layerFront.map((landmark)=>_landMark(landmark, true)).toList());
+      });
   }
 
   Widget getWidget(){
@@ -40,17 +98,17 @@ class TomeMap{
           onTapUp: (details){
             Offset position = details.localPosition;
             position = position.translate(-landmarkSize/2, -landmarkSize);
-            _layerFront.moveLandmark(position);
+            moveLandmark(position);
           },
           child: Container(color: Colors.amber,)
         ),
-        _layerBack.getWidget(),
-        _layerFront.getWidget()
+        _layBack(),
+        _layFront()
       ],
     );
   }
 
-  List<Offset> getActiveLandmarks(){
-    return _layerFront.landmarks;
+  List<Offset> getCurrentLandmarks(){
+    return _layerBack;
   }
 }
