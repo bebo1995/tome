@@ -21,10 +21,10 @@ class TomeMap{
     Offset localPoint = contextBox.globalToLocal(globalPoint);
     double xTransl = 0;
     double yTransl = 0;
-    if(!(localPoint.dx > 0 && contextBox.size.width - localPoint.dx > 0)){
+    if(!(localPoint.dx > 0 && (contextBox.size.width - landmarkSize) - localPoint.dx > 0)){
       xTransl = localPoint.dx < 0 ? -localPoint.dx : contextBox.size.width - (localPoint.dx + landmarkSize);
     }
-    if(!(localPoint.dy > 0 && contextBox.size.height - localPoint.dy > 0)){
+    if(!(localPoint.dy > 0 && (contextBox.size.height - landmarkSize) - localPoint.dy > 0)){
       yTransl = localPoint.dy < 0 ? -localPoint.dy : contextBox.size.height - (localPoint.dy + landmarkSize);
     }
     Offset adjustedPoint = localPoint.translate(xTransl, yTransl); 
