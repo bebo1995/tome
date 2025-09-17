@@ -13,19 +13,23 @@ class Landmark {
     isDraggable = false;
   }
 
+  void enableSelection(Function onSelection){
+    onTap = onSelection;
+  }
+
   Widget getWidget(){
     Icon icon = Icon(Icons.location_on, size: size,);
     Widget dragIcon = isDraggable ? Draggable(
             feedback: icon,
             childWhenDragging: Container(),
-            onDragEnd: (details) => onDragEnd,
+            onDragEnd: (details) => onDragEnd != null ?  onDragEnd!(details) : null,
             child: icon,
           ) : icon;
     return Positioned(
           left: position.dx,
           top: position.dy,
           child: GestureDetector(
-            onTap: () => onTap,
+            onTap: () => onTap != null ? onTap!() : null,
             child: dragIcon,
           )
         ); 

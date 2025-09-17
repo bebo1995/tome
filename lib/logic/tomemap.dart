@@ -5,15 +5,17 @@ import 'package:tome/logic/landmark.dart';
 
 class TomeMap{
   final List<Landmark> _layerBack;
-  final List<Landmark> _layerFront;
+  final List<Offset> _layerFront;
   final StreamController<Landmark> _layBStream;
   final StreamController<Offset?> _layFStream;
   final List<Landmark> initialLandmarks;
   final double landmarkSize;
+  final Function onLMarkSelection;
+  final Function onLMarkUnSelection;
 
-  TomeMap({required this.initialLandmarks, required this.landmarkSize}) : 
+  TomeMap({required this.initialLandmarks, required this.landmarkSize, required this.onLMarkSelection, required this.onLMarkUnSelection}) : 
   _layerBack = initialLandmarks,
-  _layerFront = List<Landmark>.empty(growable: true),
+  _layerFront = List<Offset>.empty(growable: true),
   _layFStream = StreamController<Offset?>(),
   _layBStream = StreamController<Landmark>();
 
@@ -38,12 +40,7 @@ class TomeMap{
   }
 
   void createLandmark(Offset landmarkPosition){
-    _layerFront.add(Landmark(
-      size: landmarkSize, 
-      position: landmarkPosition,
-      onDragEnd: (details) => _onDragLandmark,
-      isDraggable: true),
-    );
+    _layerFront.add(landmarkPosition);
     _layFStream.add(landmarkPosition);
   }
 
@@ -56,9 +53,13 @@ class TomeMap{
   }
 
   void confirmLandmarks(){
-    for (Landmark landmark in _layerFront) {
-      landmark.disableDrag();
-      _layBStream.add(landmark);
+    for (Offset position in _layerFront) {
+      _layBStream.add(Landmark(
+        size: landmarkSize, 
+        position: position, 
+        isDraggable: false,
+        onTap: onLMarkSelection
+        ));
     }
     _resetFront();
   }
@@ -83,9 +84,14 @@ class TomeMap{
       stream: _layFStream.stream, 
       builder: (BuildContext context, AsyncSnapshot<Offset?> snap){
         if(snap.hasData){
-          _layerFront.last.position = snap.data!;
+          _layerFront.last = snap.data!;
         }
-        return Stack(children: _layerFront.map((landmark)=>landmark.getWidget()).toList());
+        return Stack(children: _layerFront.map((position)=>Landmark(
+          size: landmarkSize, 
+          position: position,
+          onDragEnd: (details) => _onDragLandmark(context, details),
+          isDraggable: true
+        ).getWidget()).toList());
       });
   }
 
@@ -93,6 +99,7 @@ class TomeMap{
     Widget background = GestureDetector(
       onTapUp: (details){
         if(_layerFront.isEmpty){
+          onLMarkUnSelection();
           return;
         }
         Offset position = details.localPosition;

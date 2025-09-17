@@ -10,7 +10,8 @@ import 'package:tome/settings.dart';
 
 enum TomepageMode{
   base,
-  landmarkMove
+  landmarkMove,
+  landmarkSelected
 }
 
 class TomePageArgs{
@@ -52,9 +53,15 @@ class _TomePageState extends State<TomePage> {
     return position;
   }
 
+  void _onMarkSelection(StreamController<TomepageMode> modeStream){
+    modeStream.add(TomepageMode.landmarkSelected);
+  }
+
+  void _onMarkUnSelection(StreamController<TomepageMode> modeStream){
+    modeStream.add(TomepageMode.base);
+  }
 
   Widget baseButtons(StreamController<TomepageMode> modeStream, TomeMap map, GlobalKey mapKey){
-    //TODO: enable landmark selection
     return Row(
       children: [
         button(() => {}, Icon(Icons.book)),
@@ -89,6 +96,16 @@ class _TomePageState extends State<TomePage> {
     );
   }
 
+  Widget landmarkSelectedButtons(){
+    return Row(
+      children: [
+        button(() => {}, Icon(Icons.edit_location_alt)),
+        button(() => {}, Icon(Icons.edit)),
+        button(() => {}, Icon(Icons.delete)),
+      ],
+    );
+  }
+
   Widget tomepageBody(GlobalKey mapKey, Widget buttons, TomeMap map){
     return Column(
       children: [
@@ -106,6 +123,8 @@ class _TomePageState extends State<TomePage> {
     TomeMap map = TomeMap(
       landmarkSize: landmarkSize, 
       initialLandmarks: widget.tome.landmarks, 
+      onLMarkSelection: () => _onMarkSelection(modeStream),
+      onLMarkUnSelection: () => _onMarkUnSelection(modeStream)
     );
     return Scaffold(
       appBar: AppBar(
@@ -130,6 +149,9 @@ class _TomePageState extends State<TomePage> {
                 break;
               case TomepageMode.landmarkMove:
                 buttons = landmarkConfirmButtons(modeStream, map);
+                break;
+              case TomepageMode.landmarkSelected:
+                buttons = landmarkSelectedButtons();
                 break;
             }
           }
