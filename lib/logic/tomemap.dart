@@ -1,20 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:tome/logic/landmark.dart';
 
 class TomeMap{
-  final List<Offset> _layerBack;
-  final List<Offset> _layerFront;
-  final StreamController<Offset> _layBStream;
+  final List<Landmark> _layerBack;
+  final List<Landmark> _layerFront;
+  final StreamController<Landmark> _layBStream;
   final StreamController<Offset?> _layFStream;
-  final List<Offset> initialLandmarks;
+  final List<Landmark> initialLandmarks;
   final double landmarkSize;
 
   TomeMap({required this.initialLandmarks, required this.landmarkSize}) : 
   _layerBack = initialLandmarks,
-  _layerFront = List<Offset>.empty(growable: true),
+  _layerFront = List<Landmark>.empty(growable: true),
   _layFStream = StreamController<Offset?>(),
-  _layBStream = StreamController<Offset>();
+  _layBStream = StreamController<Landmark>();
 
   Offset _adjustMarkXY(BuildContext context, Offset globalPoint){
     RenderBox contextBox = context.findRenderObject() as RenderBox;
@@ -36,13 +37,18 @@ class TomeMap{
     _layFStream.add(null);
   }
 
-  void createLandmark(Offset position){
-    _layerFront.add(position);
-    _layFStream.add(position);
+  void createLandmark(Offset landmarkPosition){
+    _layerFront.add(Landmark(
+      size: landmarkSize, 
+      position: landmarkPosition,
+      onDragEnd: (details) => _onDragLandmark,
+      isDraggable: true),
+    );
+    _layFStream.add(landmarkPosition);
   }
 
-  void moveLandmark(Offset position){
-    _layFStream.add(position);
+  void moveLandmark(Offset newPosition){
+    _layFStream.add(newPosition);
   }
 
   void cancelLandmarks(){
@@ -50,53 +56,36 @@ class TomeMap{
   }
 
   void confirmLandmarks(){
-    for (Offset landmark in _layerFront) {
+    for (Landmark landmark in _layerFront) {
+      landmark.disableDrag();
       _layBStream.add(landmark);
     }
     _resetFront();
   }
 
-  Widget _landMark(Offset position, bool activateDrag, BuildContext context){
-    Icon landmark = Icon(Icons.location_on, size: landmarkSize,);
-    Widget returnWidget = landmark;
-    if(!activateDrag){
-      returnWidget = landmark;
-    }
-    else{
-      returnWidget = Draggable(
-            feedback: landmark,
-            childWhenDragging: Container(),
-            onDragEnd: (details) => moveLandmark(_adjustMarkXY(context, details.offset)),
-            child: landmark,
-          );
-    }
-    return Positioned(
-          left: position.dx,
-          top: position.dy,
-          child: returnWidget
-        ); 
+  void _onDragLandmark(BuildContext context, DraggableDetails details){
+    moveLandmark(_adjustMarkXY(context, details.offset));
   }
 
-  Widget _layBack(BuildContext context){
-    return StreamBuilder<Offset>(
+  Widget _layBack(){
+    return StreamBuilder<Landmark>(
       stream: _layBStream.stream, 
-      builder: (BuildContext context, AsyncSnapshot<Offset> snap){
+      builder: (BuildContext context, AsyncSnapshot<Landmark> snap){
         if(snap.hasData){
           _layerBack.add(snap.data!);
         }
-        return Stack(children: _layerBack.map((landmark)=>_landMark(landmark, false, context)).toList());
+        return Stack(children: _layerBack.map((landmark)=>landmark.getWidget()).toList());
       });
   }
 
-  Widget _layFront(BuildContext context){
+  Widget _layFront(){
     return StreamBuilder<Offset?>(
       stream: _layFStream.stream, 
       builder: (BuildContext context, AsyncSnapshot<Offset?> snap){
-        _layerFront.clear();
         if(snap.hasData){
-          _layerFront.add(snap.data!);
+          _layerFront.last.position = snap.data!;
         }
-        return Stack(children: _layerFront.map((landmark)=>_landMark(landmark, true, context)).toList());
+        return Stack(children: _layerFront.map((landmark)=>landmark.getWidget()).toList());
       });
   }
 
@@ -115,13 +104,13 @@ class TomeMap{
     return Stack(
       children: [
         background,
-        _layBack(context),
-        _layFront(context)
+        _layBack(),
+        _layFront()
       ],
     );
   }
 
-  List<Offset> getCurrentLandmarks(){
+  List<Landmark> getCurrentLandmarks(){
     return _layerBack;
   }
 }

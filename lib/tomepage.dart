@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:tome/logic/database.dart';
+import 'package:tome/logic/landmark.dart';
 import 'package:tome/logic/tome.dart';
 import 'package:tome/main.dart';
 import 'package:tome/logic/tomemap.dart';
@@ -76,7 +77,7 @@ class _TomePageState extends State<TomePage> {
         }, Icon(Icons.arrow_back)),
         button((){
           map.confirmLandmarks();
-          for(Offset landmark in map.getCurrentLandmarks()){
+          for(Landmark landmark in map.getCurrentLandmarks()){
             if(!widget.tome.landmarks.contains(landmark)){
               widget.tome.landmarks.add(landmark);
             }
