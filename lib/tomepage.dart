@@ -9,11 +9,8 @@ import 'package:tome/settings.dart';
 
 enum TomepageMode{
   base,
-  landmarkOn,
   landmarkMove
 }
-
-
 
 class TomePageArgs{
   final Database db;
@@ -54,22 +51,13 @@ class _TomePageState extends State<TomePage> {
     return position;
   }
 
-  Widget baseButtons(StreamController<TomepageMode> modeStream) {
+
+  Widget baseButtons(StreamController<TomepageMode> modeStream, TomeMap map, GlobalKey mapKey){
+    //TODO: enable landmark selection
     return Row(
       children: [
         button(() => {}, Icon(Icons.book)),
         button(() => {}, Icon(Icons.add_photo_alternate)),
-        button(() => modeStream.add(TomepageMode.landmarkOn), Icon(Icons.location_on)),
-      ],
-    );
-  }
-
-
-  Widget landmarkOnButtons(StreamController<TomepageMode> modeStream, TomeMap map, GlobalKey mapKey){
-    //TODO: enable landmark selection
-    return Row(
-      children: [
-        button(() => modeStream.add(TomepageMode.base), Icon(Icons.arrow_back)),
         button((){
           modeStream.add(TomepageMode.landmarkMove);
           Offset newLocation = createLocation(mapKey)!;
@@ -84,7 +72,7 @@ class _TomePageState extends State<TomePage> {
       children: [
         button((){
           map.cancelLandmarks();
-          modeStream.add(TomepageMode.landmarkOn);
+          modeStream.add(TomepageMode.base);
         }, Icon(Icons.arrow_back)),
         button((){
           map.confirmLandmarks();
@@ -93,7 +81,7 @@ class _TomePageState extends State<TomePage> {
               widget.tome.landmarks.add(landmark);
             }
           }
-          modeStream.add(TomepageMode.landmarkOn);
+          modeStream.add(TomepageMode.base);
         }, 
         Icon(Icons.check)),
       ],
@@ -132,15 +120,12 @@ class _TomePageState extends State<TomePage> {
         builder: (context, modeUpdate) {
           Widget buttons;
           if(modeUpdate.connectionState == ConnectionState.none || modeUpdate.connectionState == ConnectionState.waiting){
-            buttons = baseButtons(modeStream);
+            buttons = baseButtons(modeStream, map, mapKey);
           }
           else{
             switch(modeUpdate.data!){
               case TomepageMode.base:
-                buttons = baseButtons(modeStream);
-                break;
-              case TomepageMode.landmarkOn:
-                buttons = landmarkOnButtons(modeStream, map, mapKey);
+                buttons = baseButtons(modeStream, map, mapKey);
                 break;
               case TomepageMode.landmarkMove:
                 buttons = landmarkConfirmButtons(modeStream, map);
