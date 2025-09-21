@@ -2,18 +2,17 @@ import 'package:flutter/material.dart';
 
 class Landmark {
   final double size;
-  Function? onTap;
-  Function(DraggableDetails)? onDragEnd;
+  Function(Landmark)? onTap;
+  Function(DraggableDetails, Landmark)? onDragEnd;
   Offset position;
   bool isDraggable;
   Landmark({required this.size, required this.position, this.onTap, this.onDragEnd, required this.isDraggable});
 
   void disableDrag(){
-    onDragEnd = null;
     isDraggable = false;
   }
 
-  void enableSelection(Function onSelection){
+  void enableSelection(Function(Landmark) onSelection){
     onTap = onSelection;
   }
 
@@ -22,14 +21,19 @@ class Landmark {
     Widget dragIcon = isDraggable ? Draggable(
             feedback: icon,
             childWhenDragging: Container(),
-            onDragEnd: (details) => onDragEnd != null ?  onDragEnd!(details) : null,
+            onDragEnd: (details){
+              if(onDragEnd == null){
+                return;
+              }
+              onDragEnd!(details, this);
+            },
             child: icon,
           ) : icon;
     return Positioned(
           left: position.dx,
           top: position.dy,
           child: GestureDetector(
-            onTap: () => onTap != null ? onTap!() : null,
+            onTap: () => onTap != null ? onTap!(this) : null,
             child: dragIcon,
           )
         ); 
