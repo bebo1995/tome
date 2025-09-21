@@ -99,8 +99,10 @@ class _TomePageState extends State<TomePage> {
 
   void markSelection(StreamController<LandmarkEvent> modeStream, Landmark selected, StreamController<Offset?> posStream){
     widget.tome.landmarks.remove(selected);
-    selected.isDraggable = true;
+    selected.isDraggable = false;
     selected.isTappable = false;
+    selected.isInEdit = true;
+    selected.savePosition();
     posStream.add(selected.position);
     modeStream.add(LandmarkEvent(landmark: selected, mode: TomepageMode.landmarkSelected));
   }
@@ -108,6 +110,8 @@ class _TomePageState extends State<TomePage> {
   void markUnSelection(StreamController<LandmarkEvent> modeStream, Landmark selected){
     selected.isDraggable = false;
     selected.isTappable = true;
+    selected.isInEdit = false;
+    selected.restorePosition();
     widget.tome.landmarks.add(selected);
     modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base ));
   }
@@ -141,12 +145,20 @@ class _TomePageState extends State<TomePage> {
     return Row(
       children: [
         button((){
+          if(selected.isInEdit){
+            selected.isDraggable = false;
+            selected.isTappable = true;
+            selected.isInEdit = false;  
+            selected.restorePosition();
+            widget.tome.landmarks.add(selected);  
+          }
           posStream.add(null);
           modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base));
         }, Icon(Icons.arrow_back)),
         button((){
           selected.isDraggable = false;
           selected.isTappable = true;
+          selected.isInEdit = false;
           widget.tome.landmarks.add(selected);
           posStream.add(null);
           modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base));
@@ -160,6 +172,7 @@ class _TomePageState extends State<TomePage> {
     return Row(
       children: [
         button((){
+          selected.isDraggable = true;
           modeStream.add(LandmarkEvent(landmark: selected, mode: TomepageMode.landmarkMove));
         }, Icon(Icons.edit_location_alt)),
         button((){}, Icon(Icons.edit)),

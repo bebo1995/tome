@@ -7,7 +7,10 @@ class Landmark {
   Offset position;
   bool isDraggable;
   bool isTappable;
-  Landmark({required this.size, required this.position, this.onTap, this.onDragEnd, required this.isDraggable, required this.isTappable});
+  bool isInEdit;
+  Offset? _posStore;
+  Landmark({required this.size, required this.position, this.onTap, this.onDragEnd, required this.isDraggable, required this.isTappable})
+  : isInEdit = false;
 
   void disableDrag(){
     isDraggable = false;
@@ -15,6 +18,18 @@ class Landmark {
 
   void enableSelection(Function(Landmark) onSelection){
     onTap = onSelection;
+  }
+
+  void savePosition(){
+    _posStore = position;
+  }
+
+  void restorePosition(){
+    if(_posStore == null){
+      return;
+    }
+    position = _posStore!;
+    _posStore = null;
   }
 
   Widget getWidget(){
