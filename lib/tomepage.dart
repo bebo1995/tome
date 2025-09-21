@@ -97,11 +97,18 @@ class _TomePageState extends State<TomePage> {
     return position;
   }
 
-  void markSelection(StreamController<LandmarkEvent> modeStream, Landmark selected){
+  void markSelection(StreamController<LandmarkEvent> modeStream, Landmark selected, StreamController<Offset?> posStream){
+    widget.tome.landmarks.remove(selected);
+    selected.isDraggable = true;
+    selected.isTappable = false;
+    posStream.add(selected.position);
     modeStream.add(LandmarkEvent(landmark: selected, mode: TomepageMode.landmarkSelected));
   }
 
-  void markUnSelection(StreamController<LandmarkEvent> modeStream){
+  void markUnSelection(StreamController<LandmarkEvent> modeStream, Landmark selected){
+    selected.isDraggable = false;
+    selected.isTappable = true;
+    widget.tome.landmarks.add(selected);
     modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base ));
   }
 
@@ -115,13 +122,14 @@ class _TomePageState extends State<TomePage> {
           Landmark landmark = Landmark(
             size: landmarkSize, 
             position: newLocation, 
-            onTap: (landmark) => markSelection(modeStream, landmark),
+            onTap: (landmark) => markSelection(modeStream, landmark, posStream),
             onDragEnd: (details, landmark){
               Offset newPosition = adjustMarkXY(mapKey.currentContext!, details.offset, landmark.size);
               landmark.position = newPosition;
               posStream.add(landmark.position);
             },
             isDraggable: true,
+            isTappable: false
           );
           modeStream.add(LandmarkEvent(landmark: landmark, mode: TomepageMode.landmarkMove));
           }, Icon(Icons.add_location)),
@@ -137,7 +145,8 @@ class _TomePageState extends State<TomePage> {
           modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base));
         }, Icon(Icons.arrow_back)),
         button((){
-          selected.disableDrag();
+          selected.isDraggable = false;
+          selected.isTappable = true;
           widget.tome.landmarks.add(selected);
           posStream.add(null);
           modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base));
@@ -147,12 +156,16 @@ class _TomePageState extends State<TomePage> {
     );
   }
 
-  Widget landmarkSelectedButtons(){
+  Widget landmarkSelectedButtons(StreamController<LandmarkEvent> modeStream, Landmark selected){
     return Row(
       children: [
-        button(() => {}, Icon(Icons.edit_location_alt)),
-        button(() => {}, Icon(Icons.edit)),
-        button(() => {}, Icon(Icons.delete)),
+        button((){
+          modeStream.add(LandmarkEvent(landmark: selected, mode: TomepageMode.landmarkMove));
+        }, Icon(Icons.edit_location_alt)),
+        button((){}, Icon(Icons.edit)),
+        button((){
+          modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base));
+        }, Icon(Icons.delete)),
       ],
     );
   }
@@ -164,7 +177,7 @@ class _TomePageState extends State<TomePage> {
           return;
         }
         if(mode == TomepageMode.landmarkSelected){
-          markUnSelection(modeStream);
+          markUnSelection(modeStream, selected);
           return;
         }
         Offset position = details.localPosition;
@@ -223,7 +236,7 @@ class _TomePageState extends State<TomePage> {
                 buttons = landmarkConfirmButtons(modeStream, posStream, modeUpdate.data!.landmark!);
                 break;
               case TomepageMode.landmarkSelected:
-                buttons = landmarkSelectedButtons();
+                buttons = landmarkSelectedButtons(modeStream, modeUpdate.data!.landmark!);
                 break;
             }
           }

@@ -6,7 +6,8 @@ class Landmark {
   Function(DraggableDetails, Landmark)? onDragEnd;
   Offset position;
   bool isDraggable;
-  Landmark({required this.size, required this.position, this.onTap, this.onDragEnd, required this.isDraggable});
+  bool isTappable;
+  Landmark({required this.size, required this.position, this.onTap, this.onDragEnd, required this.isDraggable, required this.isTappable});
 
   void disableDrag(){
     isDraggable = false;
@@ -33,7 +34,7 @@ class Landmark {
           left: position.dx,
           top: position.dy,
           child: GestureDetector(
-            onTap: () => onTap != null ? onTap!(this) : null,
+            onTap: () => onTap != null && isTappable ? onTap!(this) : null,
             child: dragIcon,
           )
         ); 
