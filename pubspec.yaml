@@ -39,6 +39,7 @@ dependencies:
   path_provider: ^2.1.5
   path: ^1.9.1
   flutter_project_name_changer: ^1.0.5
+  file_picker: ^10.3.3
 
 dev_dependencies:
   flutter_test:
