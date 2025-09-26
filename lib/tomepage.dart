@@ -199,12 +199,12 @@ class _TomePageState extends State<TomePage> {
   }
 
   Widget mapImage(Landmark? selected, TomepageMode mode){
-    double baseScale = 1.0;
-    double currScale = 1.0;
     return StreamBuilder(
       stream: widget._imgStream.stream, 
       builder: (BuildContext context, AsyncSnapshot<Image> snap){
-        Size imgSize = MediaQuery.of(context).size;
+        double baseScale = 1.0;
+        double currScale = 1.0;
+        widget._scaleStream.add(baseScale);
         return GestureDetector(
           onTapUp: (details){
             if(selected == null){
@@ -234,21 +234,16 @@ class _TomePageState extends State<TomePage> {
             stream: widget._scaleStream.stream,
             initialData: baseScale,
             builder: (context, AsyncSnapshot<double> scaleSnap){
-              double scale = scaleSnap.data!;
               return !snap.hasData 
               ? Container(color: Colors.white,)
               : Stack(
                   children: [
                     Container(color: Colors.white,),
                     Center(
-                      child: FittedBox(
-                        fit: BoxFit.none,
-                        child: Image(
-                          image:snap.data!.image, 
-                          width: imgSize.width * scale, 
-                          height: imgSize.height * scale,
-                        ),
-                      ),
+                      child: Transform.scale(
+                        scale: scaleSnap.data!,
+                        child: snap.data!
+                      ), 
                     )
                   ],
               );
