@@ -31,7 +31,15 @@ class TomePageArgs{
 class TomePage extends StatefulWidget {
   final Database db;
   final Tome tome;
-  const TomePage({super.key, required this.db, required this.tome});
+  final StreamController<LandmarkEvent> _modeStream;
+  final StreamController<Offset?> _posStream;
+  final StreamController<Image> _imgStream;
+  final StreamController<double> _scaleStream;
+  TomePage({super.key, required this.db, required this.tome}) : 
+  _modeStream = StreamController<LandmarkEvent>.broadcast(),
+  _posStream = StreamController<Offset?>.broadcast(),
+  _imgStream = StreamController<Image>.broadcast(),
+  _scaleStream = StreamController<double>.broadcast();
   static TomePage fromArgs(TomePageArgs args){
     return TomePage(db: args.db, tome: args.tome);
   }
@@ -99,33 +107,33 @@ class _TomePageState extends State<TomePage> {
     return position;
   }
 
-  void markSelection(StreamController<LandmarkEvent> modeStream, Landmark selected, StreamController<Offset?> posStream){
+  void markSelection(Landmark selected){
     widget.tome.landmarks.remove(selected);
     selected.isDraggable = false;
     selected.isTappable = false;
     selected.isInEdit = true;
     selected.savePosition();
-    posStream.add(selected.position);
-    modeStream.add(LandmarkEvent(landmark: selected, mode: TomepageMode.landmarkSelected));
+    widget._posStream.add(selected.position);
+    widget._modeStream.add(LandmarkEvent(landmark: selected, mode: TomepageMode.landmarkSelected));
   }
 
-  void markUnSelection(StreamController<LandmarkEvent> modeStream, Landmark selected){
+  void markUnSelection(Landmark selected){
     selected.isDraggable = false;
     selected.isTappable = true;
     selected.isInEdit = false;
     selected.restorePosition();
     widget.tome.landmarks.add(selected);
-    modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base ));
+    widget._modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base ));
   }
 
-  Widget baseButtons(StreamController<LandmarkEvent> modeStream, GlobalKey mapKey, double landmarkSize, StreamController<Offset?> posStream, StreamController<Image> imgStream){
+  Widget baseButtons(GlobalKey mapKey, double landmarkSize){
     return Row(
       children: [
         button(() => {}, Icon(Icons.book)),
         button(() async{
           var result = await FilePicker.platform.pickFiles();
           if(result != null){
-            imgStream.add(Image.file(File(result.files.single.path!)));
+            widget._imgStream.add(Image.file(File(result.files.single.path!)));
           }
         }, Icon(Icons.add_photo_alternate)),
         button((){
@@ -133,22 +141,22 @@ class _TomePageState extends State<TomePage> {
           Landmark landmark = Landmark(
             size: landmarkSize, 
             position: newLocation, 
-            onTap: (landmark) => markSelection(modeStream, landmark, posStream),
+            onTap: (landmark) => markSelection(landmark),
             onDragEnd: (details, landmark){
               Offset newPosition = adjustMarkXY(mapKey.currentContext!, details.offset, landmark.size);
               landmark.position = newPosition;
-              posStream.add(landmark.position);
+              widget._posStream.add(landmark.position);
             },
             isDraggable: true,
             isTappable: false
           );
-          modeStream.add(LandmarkEvent(landmark: landmark, mode: TomepageMode.landmarkMove));
+          widget._modeStream.add(LandmarkEvent(landmark: landmark, mode: TomepageMode.landmarkMove));
           }, Icon(Icons.add_location)),
       ],
     );
   }
 
-  Widget landmarkConfirmButtons(StreamController<LandmarkEvent> modeStream, StreamController<Offset?> posStream, Landmark selected){
+  Widget landmarkConfirmButtons(Landmark selected){
     return Row(
       children: [
         button((){
@@ -159,74 +167,85 @@ class _TomePageState extends State<TomePage> {
             selected.restorePosition();
             widget.tome.landmarks.add(selected);  
           }
-          posStream.add(null);
-          modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base));
+          widget._posStream.add(null);
+          widget._modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base));
         }, Icon(Icons.arrow_back)),
         button((){
           selected.isDraggable = false;
           selected.isTappable = true;
           selected.isInEdit = false;
           widget.tome.landmarks.add(selected);
-          posStream.add(null);
-          modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base));
+          widget._posStream.add(null);
+          widget._modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base));
         }, 
         Icon(Icons.check)),
       ],
     );
   }
 
-  Widget landmarkSelectedButtons(StreamController<LandmarkEvent> modeStream, Landmark selected){
+  Widget landmarkSelectedButtons(Landmark selected){
     return Row(
       children: [
         button((){
           selected.isDraggable = true;
-          modeStream.add(LandmarkEvent(landmark: selected, mode: TomepageMode.landmarkMove));
+          widget._modeStream.add(LandmarkEvent(landmark: selected, mode: TomepageMode.landmarkMove));
         }, Icon(Icons.edit_location_alt)),
         button((){}, Icon(Icons.edit)),
         button((){
-          modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base));
+          widget._modeStream.add(LandmarkEvent(landmark: null, mode: TomepageMode.base));
         }, Icon(Icons.delete)),
       ],
     );
   }
 
-  Widget map(StreamController<LandmarkEvent> modeStream, StreamController<Offset?> posStream, Landmark? selected, TomepageMode mode, StreamController<Image> imgStream){
-    Widget background = GestureDetector(
-      onTapUp: (details){
-        if(selected == null){
-          return;
-        }
-        if(mode == TomepageMode.landmarkSelected){
-          markUnSelection(modeStream, selected);
-          return;
-        }
-        Offset position = details.localPosition;
-        position = position.translate(-selected.size/2, -selected.size);
-        selected.position = position;
-        posStream.add(selected.position);
-      },
-      child: StreamBuilder(
-        stream: imgStream.stream, 
-        builder: (BuildContext context, AsyncSnapshot<Image> snap){
-          if(!snap.hasData){
-            return Container(color: Colors.amber,);
-          }
-          return snap.data!;
-        }),
+  Widget mapImage(Landmark? selected, TomepageMode mode){
+    return StreamBuilder(
+      stream: widget._imgStream.stream, 
+      builder: (BuildContext context, AsyncSnapshot<Image> snap){
+        return GestureDetector(
+          onTapUp: (details){
+            if(selected == null){
+              return;
+            }
+            if(mode == TomepageMode.landmarkSelected){
+              markUnSelection(selected);
+              return;
+            }
+            Offset position = details.localPosition;
+            position = position.translate(-selected.size/2, -selected.size);
+            selected.position = position;
+            widget._posStream.add(selected.position);
+          },
+          onScaleUpdate: (details) {
+            widget._scaleStream.add(details.scale);
+          },
+          child: !snap.hasData 
+          ? Container(color: Colors.white,)
+          : Stack(
+              children: [
+                Container(color: Colors.white,),
+                Center(child: snap.data!)
+              ],
+            )
+        );
+      }
     );
+  }
+
+  Widget map(Landmark? selected, TomepageMode mode){
     return Stack(
       children: [
-        background,
-        editLayer(posStream, selected),
+        mapImage(selected, mode),
+        editLayer(widget._posStream, selected),
         baseLayer()
       ],
     );
   }
 
-  Widget tomepageBody(GlobalKey mapKey, Widget buttons, StreamController<Offset?> posStream, Landmark? selected, TomepageMode mode, StreamController<LandmarkEvent> modeStream, StreamController<Image> imgStream){
+  Widget tomepageBody(GlobalKey mapKey, Widget buttons, Landmark? selected, TomepageMode mode){
     return Column(
       children: [
-        Expanded(flex: 90, key: mapKey, child: map(modeStream, posStream, selected, mode, imgStream)), 
+        Expanded(flex: 90, key: mapKey, child: map(selected, mode)), 
         Expanded(flex: 10, child: buttons)],
     ); 
   }
@@ -234,9 +253,6 @@ class _TomePageState extends State<TomePage> {
   @override
   Widget build(BuildContext context) {
     double landmarkSize = MediaQuery.of(context).size.shortestSide/15;
-    StreamController<LandmarkEvent> modeStream = StreamController<LandmarkEvent>.broadcast();
-    StreamController<Offset?> posStream = StreamController<Offset?>.broadcast();
-    StreamController<Image> imgStream = StreamController<Image>.broadcast();
     LandmarkEvent initialMode = LandmarkEvent(landmark: null, mode: TomepageMode.base);
     GlobalKey mapKey = GlobalKey();
     return Scaffold(
@@ -248,27 +264,27 @@ class _TomePageState extends State<TomePage> {
           icon: Icon(Icons.settings))],
       ),
       body: StreamBuilder<LandmarkEvent>(
-        stream: modeStream.stream,
+        stream: widget._modeStream.stream,
         initialData: initialMode,
         builder: (context, modeUpdate) {
           Widget buttons;
           if(modeUpdate.connectionState == ConnectionState.none || modeUpdate.connectionState == ConnectionState.waiting){
-            buttons = baseButtons(modeStream, mapKey, landmarkSize, posStream, imgStream);
+            buttons = baseButtons(mapKey, landmarkSize);
           }
           else{
             switch(modeUpdate.data!.mode){
               case TomepageMode.base:
-                buttons = baseButtons(modeStream, mapKey, landmarkSize, posStream, imgStream);
+                buttons = baseButtons(mapKey, landmarkSize);
                 break;
               case TomepageMode.landmarkMove:
-                buttons = landmarkConfirmButtons(modeStream, posStream, modeUpdate.data!.landmark!);
+                buttons = landmarkConfirmButtons(modeUpdate.data!.landmark!);
                 break;
               case TomepageMode.landmarkSelected:
-                buttons = landmarkSelectedButtons(modeStream, modeUpdate.data!.landmark!);
+                buttons = landmarkSelectedButtons(modeUpdate.data!.landmark!);
                 break;
             }
           }
-          return tomepageBody(mapKey, buttons, posStream, modeUpdate.data!.landmark, modeUpdate.data!.mode, modeStream, imgStream);
+          return tomepageBody(mapKey, buttons, modeUpdate.data!.landmark, modeUpdate.data!.mode);
         }
       ),
     );
