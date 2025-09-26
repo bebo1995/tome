@@ -199,9 +199,12 @@ class _TomePageState extends State<TomePage> {
   }
 
   Widget mapImage(Landmark? selected, TomepageMode mode){
+    double baseScale = 1.0;
+    double currScale = 1.0;
     return StreamBuilder(
       stream: widget._imgStream.stream, 
       builder: (BuildContext context, AsyncSnapshot<Image> snap){
+        Size imgSize = MediaQuery.of(context).size;
         return GestureDetector(
           onTapUp: (details){
             if(selected == null){
@@ -217,16 +220,40 @@ class _TomePageState extends State<TomePage> {
             widget._posStream.add(selected.position);
           },
           onScaleUpdate: (details) {
-            widget._scaleStream.add(details.scale);
+            currScale = baseScale * details.scale;
+            if(currScale < 1.0){
+              currScale = 1.0;
+              return;
+            }
+            widget._scaleStream.add(currScale);
           },
-          child: !snap.hasData 
-          ? Container(color: Colors.white,)
-          : Stack(
-              children: [
-                Container(color: Colors.white,),
-                Center(child: snap.data!)
-              ],
-            )
+          onScaleEnd: (details){
+            baseScale = currScale;
+          },
+          child: StreamBuilder(
+            stream: widget._scaleStream.stream,
+            initialData: baseScale,
+            builder: (context, AsyncSnapshot<double> scaleSnap){
+              double scale = scaleSnap.data!;
+              return !snap.hasData 
+              ? Container(color: Colors.white,)
+              : Stack(
+                  children: [
+                    Container(color: Colors.white,),
+                    Center(
+                      child: FittedBox(
+                        fit: BoxFit.none,
+                        child: Image(
+                          image:snap.data!.image, 
+                          width: imgSize.width * scale, 
+                          height: imgSize.height * scale,
+                        ),
+                      ),
+                    )
+                  ],
+              );
+            },
+          )
         );
       }
     );
@@ -246,7 +273,8 @@ class _TomePageState extends State<TomePage> {
     return Column(
       children: [
         Expanded(flex: 90, key: mapKey, child: map(selected, mode)), 
-        Expanded(flex: 10, child: buttons)],
+        Expanded(flex: 10, child: Container(color: Colors.white, child: buttons,))
+      ]
     ); 
   }
 
