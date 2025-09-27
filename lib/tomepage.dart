@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:tome/logic/database.dart';
 import 'package:tome/logic/landmark.dart';
@@ -205,50 +206,66 @@ class _TomePageState extends State<TomePage> {
       builder: (BuildContext context, AsyncSnapshot<Image> snap){
         double baseScale = 1.0;
         double currScale = 1.0;
-        return GestureDetector(
-          onTapUp: (details){
-            if(selected == null){
+        return Listener(
+          onPointerSignal: (event) {
+            if(event is! PointerScrollEvent){
               return;
             }
-            if(mode == TomepageMode.landmarkSelected){
-              markUnSelection(selected);
-              return;
-            }
-            Offset position = details.localPosition;
-            position = position.translate(-selected.size/2, -selected.size);
-            selected.position = position;
-            widget._posStream.add(selected.position);
+            double scale = 0.2;
+            PointerScrollEvent ptEvent = event;
+            currScale += ptEvent.scrollDelta.direction > 0 ? -scale : scale;
+              if(currScale < 1.0){
+                currScale = 1.0;
+                return;
+              }
+              widget._scaleStream.add(currScale);
           },
-          onScaleUpdate: (details) {
-            currScale = baseScale * details.scale;
-            if(currScale < 1.0){
-              currScale = 1.0;
-              return;
-            }
-            widget._scaleStream.add(currScale);
-          },
-          onScaleEnd: (details){
-            baseScale = currScale;
-          },
-          child: StreamBuilder(
-            stream: widget._scaleStream.stream,
-            initialData: baseScale,
-            builder: (context, AsyncSnapshot<double> scaleSnap){
-              return !snap.hasData 
-              ? Container(color: Colors.white,)
-              : Stack(
-                  children: [
-                    Container(color: Colors.white,),
-                    Center(
-                      child: Transform.scale(
-                        scale: scaleSnap.data!,
-                        child: snap.data!
-                      ), 
-                    )
-                  ],
-              );
+          child: GestureDetector(
+            supportedDevices: {PointerDeviceKind.touch},
+            onTapUp: (details){
+              if(selected == null){
+                return;
+              }
+              if(mode == TomepageMode.landmarkSelected){
+                markUnSelection(selected);
+                return;
+              }
+              Offset position = details.localPosition;
+              position = position.translate(-selected.size/2, -selected.size);
+              selected.position = position;
+              widget._posStream.add(selected.position);
             },
-          )
+            onScaleUpdate: (details) {
+              currScale = baseScale * details.scale;
+              if(currScale < 1.0){
+                currScale = 1.0;
+                return;
+              }
+              widget._scaleStream.add(currScale);
+            },
+            onScaleEnd: (details){
+              baseScale = currScale;
+            },
+            child: StreamBuilder(
+              stream: widget._scaleStream.stream,
+              initialData: baseScale,
+              builder: (context, AsyncSnapshot<double> scaleSnap){
+                return !snap.hasData 
+                ? Container(color: Colors.white,)
+                : Stack(
+                    children: [
+                      Container(color: Colors.white,),
+                      Center(
+                        child: Transform.scale(
+                          scale: scaleSnap.data!,
+                          child: snap.data!
+                        ), 
+                      )
+                    ],
+                );
+              },
+            )
+          ),
         );
       }
     );
