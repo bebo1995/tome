@@ -134,6 +134,7 @@ class _TomePageState extends State<TomePage> {
           var result = await FilePicker.platform.pickFiles();
           if(result != null){
             widget._imgStream.add(Image.file(File(result.files.single.path!)));
+            widget._scaleStream.add(1.0);
           }
         }, Icon(Icons.add_photo_alternate)),
         button((){
@@ -204,7 +205,6 @@ class _TomePageState extends State<TomePage> {
       builder: (BuildContext context, AsyncSnapshot<Image> snap){
         double baseScale = 1.0;
         double currScale = 1.0;
-        widget._scaleStream.add(baseScale);
         return GestureDetector(
           onTapUp: (details){
             if(selected == null){
